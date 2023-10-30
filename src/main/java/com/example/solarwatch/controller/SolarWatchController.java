@@ -1,7 +1,9 @@
 package com.example.solarwatch.controller;
 
-import com.example.solarwatch.model.Coordinates;
-import com.example.solarwatch.model.SunriseSunsetReport;
+import com.example.solarwatch.model.OpenWeatherReport;
+import com.example.solarwatch.model.SunriseSunsetResults;
+import com.example.solarwatch.model.data.City;
+import com.example.solarwatch.model.data.CityRepository;
 import com.example.solarwatch.service.SunsetSunriseService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,8 +14,11 @@ public class SolarWatchController {
 
     private final SunsetSunriseService sunsetSunriseService;
 
-    public SolarWatchController(SunsetSunriseService sunsetSunriseService) {
+    private final CityRepository cityRepository;
+
+    public SolarWatchController(SunsetSunriseService sunsetSunriseService, CityRepository cityRepository) {
         this.sunsetSunriseService = sunsetSunriseService;
+        this.cityRepository = cityRepository;
     }
 
     @GetMapping("/solarwatch")
@@ -22,8 +27,18 @@ public class SolarWatchController {
             return ResponseEntity.badRequest().body("Invalid city name");
         }
 
-        Coordinates coordinates = sunsetSunriseService.getCoordinatesByCityName(city);
-        SunriseSunsetReport response = sunsetSunriseService.getSunRiseByCoordinates(coordinates);
-        return ResponseEntity.ok(response);
+        City cityObject = cityRepository.findByName(city).orElse(null);
+
+        if (cityObject != null){
+            SunriseSunsetResults results = sunsetSunriseService.getSunriseSunsetForCity(cityObject);
+            cityRepository.save(cityObject);
+            System.out.println("City Object saved to DB");
+            return ResponseEntity.ok(results);
+        }
+
+        SunriseSunsetResults results = sunsetSunriseService.getSunriseSunsetForCity(city);
+
+
+        return ResponseEntity.ok(results);
     }
 }

@@ -1,8 +1,9 @@
 package com.example.solarwatch.service;
 
-import com.example.solarwatch.model.Coordinates;
-import com.example.solarwatch.model.OpenWeatherReportCoordinates;
+import com.example.solarwatch.model.OpenWeatherReport;
 import com.example.solarwatch.model.SunriseSunsetReport;
+import com.example.solarwatch.model.SunriseSunsetResults;
+import com.example.solarwatch.model.data.City;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -19,21 +20,28 @@ public class SunsetSunriseService {
     public SunsetSunriseService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
-    public Coordinates getCoordinatesByCityName(String cityName){
+    private OpenWeatherReport getCoordinatesByCityName(String cityName){
         String url = String.format("https://api.openweathermap.org/geo/1.0/direct?q=%s&limit=1&appid=%s", cityName, API_KEY);
 
-        OpenWeatherReportCoordinates[] response = restTemplate.getForObject(url, OpenWeatherReportCoordinates[].class);
+        OpenWeatherReport[] response = restTemplate.getForObject(url, OpenWeatherReport[].class);
         assert response != null;
         System.out.println(Arrays.toString(response));
-        return new Coordinates(response[0].lat(), response[0].lon());
+        return response[0];
     }
-    public SunriseSunsetReport getSunRiseByCoordinates(Coordinates coordinates){
-        String url = String.format("https://api.sunrise-sunset.org/json?lat=%f&lng=%f", coordinates.lat(), coordinates.lng());
+    private SunriseSunsetResults getSunriseByCoordinates(OpenWeatherReport openWeatherReport){
+        String url = String.format("https://api.sunrise-sunset.org/json?lat=%f&lng=%f", openWeatherReport.lat(), openWeatherReport.lon());
 
-        System.out.println(restTemplate.getForObject(url, String.class));
         SunriseSunsetReport response = restTemplate.getForObject(url, SunriseSunsetReport.class);
+        System.out.println(response);
         assert response != null;
-        return response;
+        return response.results();
 
+    }
+    public SunriseSunsetResults getSunriseSunsetForCity(City city){
+        System.out.println(city.toString());
+        return new SunriseSunsetResults(city.getSunrise(), city.getSunset());
+    }
+    public SunriseSunsetResults getSunriseSunsetForCity(String city){
+        return getSunriseByCoordinates(getCoordinatesByCityName(city));
     }
 }

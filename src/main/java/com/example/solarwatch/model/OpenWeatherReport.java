@@ -1,6 +1,7 @@
 package com.example.solarwatch.model;
 
-import java.util.ArrayList;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public record OpenWeatherReport(ArrayList<String> coordinates) {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record OpenWeatherReport(String name, double lat, double lon, String country, String state) {
 }
